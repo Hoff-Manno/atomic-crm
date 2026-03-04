@@ -38,7 +38,7 @@ export const ContactMergeButton = () => {
         onClick={() => setMergeDialogOpen(true)}
       >
         <Merge className="w-4 h-4" />
-        Merge with another contact
+        Merge with another customer
       </Button>
       <ContactMergeDialog
         open={mergeDialogOpen}
@@ -125,7 +125,7 @@ const ContactMergeDialog = ({ open, onClose }: ContactMergeDialogProps) => {
 
   const handleMerge = async () => {
     if (!winnerId || !loserContact) {
-      notify("Please select a contact to merge with", { type: "warning" });
+      notify("Please select a customer to merge with", { type: "warning" });
       return;
     }
 
@@ -133,12 +133,12 @@ const ContactMergeDialog = ({ open, onClose }: ContactMergeDialogProps) => {
       setIsMerging(true);
       await mutateAsync();
       setIsMerging(false);
-      notify("Contacts merged successfully", { type: "success" });
+      notify("Customers merged successfully", { type: "success" });
       redirect(`/contacts/${winnerId}/show`);
       onClose();
     } catch (error) {
       setIsMerging(false);
-      notify("Failed to merge contacts", { type: "error" });
+      notify("Failed to merge customers", { type: "error" });
       console.error("Merge failed:", error);
     }
   };
@@ -149,16 +149,16 @@ const ContactMergeDialog = ({ open, onClose }: ContactMergeDialogProps) => {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="md:min-w-lg max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Merge Contact</DialogTitle>
+          <DialogTitle>Merge Customer</DialogTitle>
           <DialogDescription>
-            Merge this contact with another one.
+            Merge this customer with another one.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
             <p className="font-medium text-sm">
-              Current Contact (will be deleted)
+              Current Customer (will be deleted)
             </p>
             <div className="font-medium text-sm mt-4">{contactOptionText}</div>
 
@@ -167,7 +167,7 @@ const ContactMergeDialog = ({ open, onClose }: ContactMergeDialogProps) => {
             </div>
 
             <p className="font-medium text-sm mb-2">
-              Target Contact (will be kept)
+              Target Customer (will be kept)
             </p>
             <Form>
               <ReferenceInput
@@ -206,7 +206,7 @@ const ContactMergeDialog = ({ open, onClose }: ContactMergeDialogProps) => {
                   )}
                   {dealsCount != null && dealsCount > 0 && (
                     <li>
-                      • {dealsCount} deal
+                      • {dealsCount} layby contract
                       {dealsCount !== 1 ? "s" : ""} will be updated
                     </li>
                   )}
@@ -239,7 +239,7 @@ const ContactMergeDialog = ({ open, onClose }: ContactMergeDialogProps) => {
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Warning: Destructive Operation</AlertTitle>
                 <AlertDescription>
-                  All data will be transferred to the second contact. This
+                  All data will be transferred to the second customer. This
                   action cannot be undone.
                 </AlertDescription>
               </Alert>
@@ -254,7 +254,7 @@ const ContactMergeDialog = ({ open, onClose }: ContactMergeDialogProps) => {
           </Button>
           <Button onClick={handleMerge} disabled={!winnerId || isMerging}>
             <Merge />
-            {isMerging ? "Merging..." : "Merge Contacts"}
+            {isMerging ? "Merging..." : "Merge Customers"}
           </Button>
         </DialogFooter>
       </DialogContent>

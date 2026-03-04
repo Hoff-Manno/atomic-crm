@@ -52,7 +52,7 @@ export const DealsPipeline = () => {
           className="text-xl font-semibold text-muted-foreground hover:underline"
           to="/deals"
         >
-          Deals Pipeline
+          Layby Pipeline
         </Link>
       </div>
       <Card>
@@ -64,13 +64,11 @@ export const DealsPipeline = () => {
           isPending={isPending}
           primaryText={(deal) => deal.name}
           secondaryText={(deal) =>
-            `${deal.amount.toLocaleString("en-US", {
-              notation: "compact",
+            `${(deal.amount - (deal.total_paid ?? 0)).toLocaleString("en-NZ", {
               style: "currency",
-              currency: "USD",
-              currencyDisplay: "narrowSymbol",
-              minimumSignificantDigits: 3,
-            })} , ${findDealLabel(dealStages, deal.stage)}`
+              currency: "NZD",
+              minimumFractionDigits: 0,
+            })} remaining · ${findDealLabel(dealStages, deal.stage)}`
           }
           leftAvatar={(deal) => (
             <ReferenceField

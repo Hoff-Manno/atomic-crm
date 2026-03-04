@@ -52,27 +52,54 @@ const processCompanyLogo = async (params: any) => {
   };
 };
 
+// Map resource names to their read-only unified views
+const READ_VIEW_MAP: Record<string, string> = {
+  companies: "companies_summary",
+  contacts: "contacts_summary",
+  deals: "deals_unified",
+  payments: "payments_crm",
+  payment_schedule: "payment_schedule_crm",
+};
+
+// Map resource names to their writable tables (for CRM-created records)
+const WRITE_TABLE_MAP: Record<string, string> = {
+  payments: "crm_payments",
+};
+
 const dataProviderWithCustomMethods = {
   ...baseDataProvider,
   async getList(resource: string, params: GetListParams) {
-    if (resource === "companies") {
-      return baseDataProvider.getList("companies_summary", params);
+    const view = READ_VIEW_MAP[resource];
+    if (view) {
+      return baseDataProvider.getList(view, params);
     }
-    if (resource === "contacts") {
-      return baseDataProvider.getList("contacts_summary", params);
-    }
-
     return baseDataProvider.getList(resource, params);
   },
   async getOne(resource: string, params: any) {
-    if (resource === "companies") {
-      return baseDataProvider.getOne("companies_summary", params);
+    const view = READ_VIEW_MAP[resource];
+    if (view) {
+      return baseDataProvider.getOne(view, params);
     }
-    if (resource === "contacts") {
-      return baseDataProvider.getOne("contacts_summary", params);
-    }
-
     return baseDataProvider.getOne(resource, params);
+  },
+  async getMany(resource: string, params: any) {
+    const view = READ_VIEW_MAP[resource];
+    if (view) {
+      return baseDataProvider.getMany(view, params);
+    }
+    return baseDataProvider.getMany(resource, params);
+  },
+  async create(resource: string, params: any) {
+    const table = WRITE_TABLE_MAP[resource] || resource;
+    return baseDataProvider.create(table, params);
+  },
+  async update(resource: string, params: any) {
+    const table = WRITE_TABLE_MAP[resource] || resource;
+    return baseDataProvider.update(table, params);
+  },
+  async delete(resource: string, params: any) {
+    const table = WRITE_TABLE_MAP[resource] || resource;
+    return baseDataProvider.delete(table, params);
   },
 
   async signUp({ email, password, first_name, last_name }: SignUpData) {
@@ -211,6 +238,28 @@ const dataProviderWithCustomMethods = {
       throw new Error("Failed to merge contacts");
     }
 
+    return data;
+  },
+  async processReminders(settings?: {
+    daysBeforeDue?: number;
+    overdueGraceDays?: number;
+    defaultAfterDays?: number;
+  }) {
+    const { data, error } = await supabase.functions.invoke(
+      "payment_reminders",
+      {
+        method: "POST",
+        body: {
+          days_before_due: settings?.daysBeforeDue ?? 3,
+          overdue_grace_days: settings?.overdueGraceDays ?? 14,
+          default_after_days: settings?.defaultAfterDays ?? 30,
+        },
+      },
+    );
+    if (error) {
+      console.error("processReminders.error", error);
+      throw new Error("Failed to process reminders");
+    }
     return data;
   },
   async getConfiguration(): Promise<ConfigurationContextValue> {

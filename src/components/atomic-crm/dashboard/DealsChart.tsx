@@ -6,19 +6,19 @@ import { memo, useMemo } from "react";
 
 import type { Deal } from "../types";
 
-const multiplier = {
-  opportunity: 0.2,
-  "proposal-sent": 0.5,
-  "in-negociation": 0.8,
-  delayed: 0.3,
+const multiplier: Record<string, number> = {
+  new: 0.1,
+  "deposit-paid": 0.3,
+  "in-progress": 0.7,
+  "paid-in-full": 1.0,
 };
 
 const threeMonthsAgo = new Date(
   new Date().setMonth(new Date().getMonth() - 6),
 ).toISOString();
 
-const DEFAULT_LOCALE = "en-US";
-const CURRENCY = "USD";
+const DEFAULT_LOCALE = "en-NZ";
+const CURRENCY = "NZD";
 
 export const DealsChart = memo(() => {
   const acceptedLanguages = navigator
@@ -49,21 +49,26 @@ export const DealsChart = memo(() => {
     const amountByMonth = Object.keys(dealsByMonth).map((month) => {
       return {
         date: format(month, "MMM"),
-        won: dealsByMonth[month]
-          .filter((deal: Deal) => deal.stage === "won")
+        collected: dealsByMonth[month]
+          .filter((deal: Deal) => deal.stage === "collected")
           .reduce((acc: number, deal: Deal) => {
             acc += deal.amount;
             return acc;
           }, 0),
-        pending: dealsByMonth[month]
-          .filter((deal: Deal) => !["won", "lost"].includes(deal.stage))
+        active: dealsByMonth[month]
+          .filter(
+            (deal: Deal) =>
+              !["collected", "cancelled", "defaulted"].includes(deal.stage),
+          )
           .reduce((acc: number, deal: Deal) => {
-            // @ts-expect-error - multiplier type issue
-            acc += deal.amount * multiplier[deal.stage];
+            acc += deal.amount * (multiplier[deal.stage] ?? 0.5);
             return acc;
           }, 0),
         lost: dealsByMonth[month]
-          .filter((deal: Deal) => deal.stage === "lost")
+          .filter(
+            (deal: Deal) =>
+              deal.stage === "cancelled" || deal.stage === "defaulted",
+          )
           .reduce((acc: number, deal: Deal) => {
             acc -= deal.amount;
             return acc;
@@ -78,7 +83,7 @@ export const DealsChart = memo(() => {
   const range = months.reduce(
     (acc, month) => {
       acc.min = Math.min(acc.min, month.lost);
-      acc.max = Math.max(acc.max, month.won + month.pending);
+      acc.max = Math.max(acc.max, month.collected + month.active);
       return acc;
     },
     { min: 0, max: 0 },
@@ -90,14 +95,14 @@ export const DealsChart = memo(() => {
           <DollarSign className="text-muted-foreground w-6 h-6" />
         </div>
         <h2 className="text-xl font-semibold text-muted-foreground">
-          Upcoming Deal Revenue
+          Layby Contract Revenue
         </h2>
       </div>
       <div className="h-[400px]">
         <ResponsiveBar
           data={months}
           indexBy="date"
-          keys={["won", "pending", "lost"]}
+          keys={["collected", "active", "lost"]}
           colors={["#61cdbb", "#97e3d5", "#e25c3b"]}
           margin={{ top: 30, right: 50, bottom: 30, left: 0 }}
           padding={0.3}
@@ -177,7 +182,7 @@ export const DealsChart = memo(() => {
                 value: 0,
                 lineStyle: { strokeOpacity: 0 },
                 textStyle: { fill: "#2ebca6" },
-                legend: "Won",
+                legend: "Collected",
                 legendPosition: "top-left",
                 legendOrientation: "vertical",
               },

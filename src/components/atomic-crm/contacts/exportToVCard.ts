@@ -71,9 +71,10 @@ export function exportToVCard(
     });
   }
 
-  // LinkedIn URL
-  if (contact.linkedin_url) {
-    lines.push(`URL:${contact.linkedin_url}`);
+  // Birthday
+  if (contact.date_of_birth) {
+    // vCard BDAY format: YYYY-MM-DD
+    lines.push(`BDAY:${contact.date_of_birth}`);
   }
 
   // Background/Note

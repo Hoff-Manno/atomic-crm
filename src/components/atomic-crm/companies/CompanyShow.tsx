@@ -60,7 +60,7 @@ const CompanyShowContentMobile = () => {
         <MobileBackButton to="/" />
         <div className="flex flex-1">
           <Link to="/">
-            <h1 className="text-xl font-semibold">Company</h1>
+            <h1 className="text-xl font-semibold">Supplier</h1>
           </Link>
         </div>
       </MobileHeader>
@@ -117,15 +117,15 @@ const CompanyShowContent = () => {
                 <TabsTrigger value="contacts">
                   {record.nb_contacts
                     ? record.nb_contacts === 1
-                      ? "1 Contact"
-                      : `${record.nb_contacts} Contacts`
-                    : "No Contacts"}
+                      ? "1 Customer"
+                      : `${record.nb_contacts} Customers`
+                    : "No Customers"}
                 </TabsTrigger>
                 {record.nb_deals ? (
                   <TabsTrigger value="deals">
                     {record.nb_deals === 1
-                      ? "1 deal"
-                      : `${record.nb_deals} deals`}
+                      ? "1 contract"
+                      : `${record.nb_deals} contracts`}
                   </TabsTrigger>
                 ) : null}
               </TabsList>
@@ -240,7 +240,7 @@ const CreateRelatedContactButton = () => {
         className="flex items-center gap-2"
       >
         <UserPlus className="h-4 w-4" />
-        Add contact
+        Add customer
       </RouterLink>
     </Button>
   );
@@ -265,10 +265,10 @@ const DealsIterator = () => {
                 <div className="font-medium">{deal.name}</div>
                 <div className="text-sm text-muted-foreground">
                   {findDealLabel(dealStages, deal.stage)},{" "}
-                  {deal.amount.toLocaleString("en-US", {
+                  {deal.amount.toLocaleString("en-NZ", {
                     notation: "compact",
                     style: "currency",
-                    currency: "USD",
+                    currency: "NZD",
                     currencyDisplay: "narrowSymbol",
                     minimumSignificantDigits: 3,
                   })}

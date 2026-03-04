@@ -4,6 +4,7 @@ import { useFormContext } from "react-hook-form";
 import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BooleanInput } from "@/components/admin/boolean-input";
+import { DateInput } from "@/components/admin/date-input";
 import { ReferenceInput } from "@/components/admin/reference-input";
 import { TextInput } from "@/components/admin/text-input";
 import { RadioButtonGroupInput } from "@/components/admin/radio-button-group-input";
@@ -11,7 +12,6 @@ import { SelectInput } from "@/components/admin/select-input";
 import { ArrayInput } from "@/components/admin/array-input";
 import { SimpleFormIterator } from "@/components/admin/simple-form-iterator";
 
-import { isLinkedinUrl } from "../misc/isLinkedInUrl";
 import { contactGender } from "./contactGender";
 import type { Sale } from "../types";
 import { Avatar } from "./Avatar";
@@ -65,8 +65,9 @@ const ContactIdentityInputs = () => {
 const ContactPositionInputs = () => {
   return (
     <div className="flex flex-col gap-4">
-      <h6 className="text-lg font-semibold">Position</h6>
-      <TextInput source="title" helperText={false} />
+      <h6 className="text-lg font-semibold">Details</h6>
+      <TextInput source="title" label="Notes / Description" helperText={false} />
+      <DateInput source="date_of_birth" label="Date of birth" helperText={false} />
       <ReferenceInput source="company_id" reference="companies" perPage={10}>
         <AutocompleteCompanyInput />
       </ReferenceInput>
@@ -133,8 +134,8 @@ const ContactPersonalInformationInputs = () => {
             label={false}
             optionText="id"
             choices={personalInfoTypes}
-            defaultValue="Work"
-            className="w-24 min-w-24"
+            defaultValue="Home"
+            className="w-28 min-w-28"
           />
         </SimpleFormIterator>
       </ArrayInput>
@@ -158,34 +159,50 @@ const ContactPersonalInformationInputs = () => {
             label={false}
             optionText="id"
             choices={personalInfoTypes}
-            defaultValue="Work"
-            className="w-24 min-w-24"
+            defaultValue="Mobile"
+            className="w-28 min-w-28"
           />
         </SimpleFormIterator>
       </ArrayInput>
-      <TextInput
-        source="linkedin_url"
-        label="Linkedin URL"
-        helperText={false}
-        validate={isLinkedinUrl}
-      />
     </div>
   );
 };
 
-const personalInfoTypes = [{ id: "Work" }, { id: "Home" }, { id: "Other" }];
+const personalInfoTypes = [
+  { id: "Mobile" },
+  { id: "Home" },
+  { id: "Work" },
+  { id: "Other" },
+];
+
+const preferredContactMethods = [
+  { id: "phone", name: "Phone" },
+  { id: "email", name: "Email" },
+  { id: "text", name: "Text / SMS" },
+];
 
 const ContactMiscInputs = () => {
   return (
     <div className="flex flex-col gap-4">
-      <h6 className="text-lg font-semibold">Misc</h6>
+      <h6 className="text-lg font-semibold">Preferences</h6>
+      <SelectInput
+        source="preferred_contact_method"
+        label="Preferred contact method"
+        choices={preferredContactMethods}
+        helperText={false}
+        defaultValue="phone"
+      />
+      <BooleanInput
+        source="has_newsletter"
+        label="Marketing opt-in"
+        helperText={false}
+      />
       <TextInput
         source="background"
-        label="Background info (bio, how you met, etc)"
+        label="Additional notes"
         multiline
         helperText={false}
       />
-      <BooleanInput source="has_newsletter" helperText={false} />
       <ReferenceInput
         reference="sales"
         source="sales_id"

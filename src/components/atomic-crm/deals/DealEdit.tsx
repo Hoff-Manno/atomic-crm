@@ -35,7 +35,7 @@ export const DealEdit = ({ open, id }: { open: boolean; id?: string }) => {
             mutationMode="pessimistic"
             mutationOptions={{
               onSuccess: () => {
-                notify("Deal updated");
+                notify("Contract updated");
                 redirect(`/deals/${id}/show`, undefined, undefined, undefined, {
                   _scrollToTop: false,
                 });
@@ -67,12 +67,12 @@ function EditHeader() {
           <ReferenceField source="company_id" reference="companies" link="show">
             <CompanyAvatar />
           </ReferenceField>
-          <h2 className="text-2xl font-semibold">Edit {deal.name} deal</h2>
+          <h2 className="text-2xl font-semibold">Edit {deal.name} contract</h2>
         </div>
         <div className="flex gap-2 pr-12">
           <DeleteButton />
           <Button asChild variant="outline" className="h-9">
-            <Link to={`/deals/${deal.id}/show`}>Back to deal</Link>
+            <Link to={`/deals/${deal.id}/show`}>Back to contract</Link>
           </Button>
         </div>
       </div>

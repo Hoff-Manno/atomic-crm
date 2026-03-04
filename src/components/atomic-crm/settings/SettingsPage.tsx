@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toSlug } from "@/lib/toSlug";
 import { ArrayInput } from "@/components/admin/array-input";
+import { NumberInput } from "@/components/admin/number-input";
 import { SimpleFormIterator } from "@/components/admin/simple-form-iterator";
 import { TextInput } from "@/components/admin/text-input";
 
@@ -21,8 +22,9 @@ import { defaultConfiguration } from "../root/defaultConfiguration";
 
 const SECTIONS = [
   { id: "branding", label: "Branding" },
-  { id: "companies", label: "Companies" },
-  { id: "deals", label: "Deals" },
+  { id: "companies", label: "Suppliers" },
+  { id: "deals", label: "Layby Contracts" },
+  { id: "reminders", label: "Reminders" },
   { id: "notes", label: "Notes" },
   { id: "tasks", label: "Tasks" },
 ];
@@ -67,7 +69,7 @@ export const validateItemsInUse = (
     ),
   ];
   if (inUse.length > 0) {
-    return `Cannot remove ${displayName} that are still used by deals: ${inUse.join(", ")}`;
+    return `Cannot remove ${displayName} that are still used by layby contracts: ${inUse.join(", ")}`;
   }
   return undefined;
 };
@@ -83,6 +85,13 @@ const transformFormValues = (data: Record<string, any>) => ({
     dealStages: ensureValues(data.dealStages),
     dealPipelineStatuses: data.dealPipelineStatuses,
     noteStatuses: ensureValues(data.noteStatuses),
+    reminderSettings: data.reminderSettings
+      ? {
+          daysBeforeDue: Number(data.reminderSettings.daysBeforeDue),
+          overdueGraceDays: Number(data.reminderSettings.overdueGraceDays),
+          defaultAfterDays: Number(data.reminderSettings.defaultAfterDays),
+        }
+      : undefined,
   } as ConfigurationContextValue,
 });
 
@@ -128,6 +137,7 @@ const SettingsForm = () => {
       dealStages: config.dealStages,
       dealPipelineStatuses: config.dealPipelineStatuses,
       noteStatuses: config.noteStatuses,
+      reminderSettings: config.reminderSettings,
     }),
     [config],
   );
@@ -227,7 +237,7 @@ const SettingsFormFields = () => {
         <Card id="companies">
           <CardContent className="space-y-4">
             <h2 className="text-xl font-semibold text-muted-foreground">
-              Companies
+              Suppliers
             </h2>
             <h3 className="text-lg font-medium text-muted-foreground">
               Sectors
@@ -248,7 +258,7 @@ const SettingsFormFields = () => {
         <Card id="deals">
           <CardContent className="space-y-4">
             <h2 className="text-xl font-semibold text-muted-foreground">
-              Deals
+              Layby Contracts
             </h2>
             <h3 className="text-lg font-medium text-muted-foreground">
               Stages
@@ -270,8 +280,8 @@ const SettingsFormFields = () => {
               Pipeline Statuses
             </h3>
             <p className="text-sm text-muted-foreground">
-              Select which deal stages count as &quot;pipeline&quot; (completed)
-              deals.
+              Select which contract stages count as &quot;pipeline&quot;
+              (completed) contracts.
             </p>
             <div className="flex flex-wrap gap-2">
               {dealStages?.map(
@@ -321,6 +331,44 @@ const SettingsFormFields = () => {
                 <TextInput source="label" label={false} />
               </SimpleFormIterator>
             </ArrayInput>
+          </CardContent>
+        </Card>
+
+        {/* Reminders */}
+        <Card id="reminders">
+          <CardContent className="space-y-4">
+            <h2 className="text-xl font-semibold text-muted-foreground">
+              Payment Reminders
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Configure when reminder tasks are automatically created for
+              upcoming and overdue payments.
+            </p>
+            <NumberInput
+              source="reminderSettings.daysBeforeDue"
+              label="Days before due date to create reminder"
+              helperText="A reminder task will be created this many days before a payment is due"
+              min={1}
+              max={30}
+            />
+            <Separator />
+            <h3 className="text-lg font-medium text-muted-foreground">
+              Escalation
+            </h3>
+            <NumberInput
+              source="reminderSettings.overdueGraceDays"
+              label="Days overdue before escalation"
+              helperText="An escalation task (contact manager) will be created after this many days overdue"
+              min={1}
+              max={90}
+            />
+            <NumberInput
+              source="reminderSettings.defaultAfterDays"
+              label="Days overdue before auto-default"
+              helperText="Contracts will be automatically moved to 'Defaulted' stage after this many days"
+              min={7}
+              max={180}
+            />
           </CardContent>
         </Card>
 

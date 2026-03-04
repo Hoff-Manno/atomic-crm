@@ -12,7 +12,10 @@ export const DealColumn = ({
   stage: string;
   deals: Deal[];
 }) => {
-  const totalAmount = deals.reduce((sum, deal) => sum + deal.amount, 0);
+  const totalRemaining = deals.reduce(
+    (sum, deal) => sum + (deal.amount - (deal.total_paid ?? 0)),
+    0,
+  );
 
   const { dealStages } = useConfigurationContext();
   return (
@@ -22,13 +25,11 @@ export const DealColumn = ({
           {findDealLabel(dealStages, stage)}
         </h3>
         <p className="text-sm text-muted-foreground">
-          {totalAmount.toLocaleString("en-US", {
-            notation: "compact",
+          {totalRemaining.toLocaleString("en-NZ", {
             style: "currency",
-            currency: "USD",
-            currencyDisplay: "narrowSymbol",
-            minimumSignificantDigits: 3,
-          })}
+            currency: "NZD",
+            minimumFractionDigits: 0,
+          })} remaining
         </p>
       </div>
       <Droppable droppableId={stage}>

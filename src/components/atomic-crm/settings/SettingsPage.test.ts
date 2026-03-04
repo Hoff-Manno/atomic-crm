@@ -30,7 +30,7 @@ describe("validateItemsInUse", () => {
       { value: "opportunity", label: "Opportunity" },
     ];
     expect(validateItemsInUse(items, deals, "stage", "stages")).toBe(
-      "Cannot remove stages that are still used by deals: lost",
+      "Cannot remove stages that are still used by layby contracts: lost",
     );
   });
 

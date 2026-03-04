@@ -12,14 +12,16 @@ export type ContactImportSchema = {
   email_work: string;
   email_home: string;
   email_other: string;
-  phone_work: string;
+  phone_mobile: string;
   phone_home: string;
-  phone_other: string;
+  phone_work: string;
   background: string;
   avatar: string;
   first_seen: string;
   last_seen: string;
   has_newsletter: string;
+  preferred_contact_method: string;
+  date_of_birth: string;
   status: string;
   tags: string;
   linkedin_url: string;
@@ -93,13 +95,15 @@ export function useContactImport() {
             email_work,
             email_home,
             email_other,
-            phone_work,
+            phone_mobile,
             phone_home,
-            phone_other,
+            phone_work,
             background,
             first_seen,
             last_seen,
             has_newsletter,
+            preferred_contact_method,
+            date_of_birth,
             status,
             company: companyName,
             tags: tagNames,
@@ -111,9 +115,9 @@ export function useContactImport() {
               { email: email_other, type: "Other" },
             ].filter(({ email }) => email);
             const phone_jsonb = [
-              { number: phone_work, type: "Work" },
+              { number: phone_mobile, type: "Mobile" },
               { number: phone_home, type: "Home" },
-              { number: phone_other, type: "Other" },
+              { number: phone_work, type: "Work" },
             ].filter(({ number }) => number);
             const company = companyName?.trim()
               ? companies.get(companyName.trim())
@@ -138,6 +142,8 @@ export function useContactImport() {
                   ? new Date(last_seen).toISOString()
                   : today,
                 has_newsletter,
+                preferred_contact_method: preferred_contact_method || "phone",
+                date_of_birth: date_of_birth || null,
                 status,
                 company_id: company?.id,
                 tags: tagList.map((tag) => tag.id),

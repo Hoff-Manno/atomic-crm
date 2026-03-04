@@ -151,11 +151,12 @@ const exporter: Exporter<Contact> = async (records, fetchRelatedRecords) => {
         ?.email,
       email_jsonb: JSON.stringify(contact.email_jsonb),
       email_fts: undefined,
-      phone_work: contact.phone_jsonb?.find((phone) => phone.type === "Work")
-        ?.number,
+      phone_mobile: contact.phone_jsonb?.find(
+        (phone) => phone.type === "Mobile",
+      )?.number,
       phone_home: contact.phone_jsonb?.find((phone) => phone.type === "Home")
         ?.number,
-      phone_other: contact.phone_jsonb?.find((phone) => phone.type === "Other")
+      phone_work: contact.phone_jsonb?.find((phone) => phone.type === "Work")
         ?.number,
       phone_jsonb: JSON.stringify(contact.phone_jsonb),
       phone_fts: undefined,
@@ -165,6 +166,6 @@ const exporter: Exporter<Contact> = async (records, fetchRelatedRecords) => {
     return exportedContact;
   });
   return jsonExport(contacts, {}, (_err: any, csv: string) => {
-    downloadCSV(csv, "contacts");
+    downloadCSV(csv, "customers");
   });
 };

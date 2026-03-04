@@ -4,6 +4,8 @@ import type {
   ContactNote,
   Deal,
   DealNote,
+  Payment,
+  PaymentScheduleItem,
   Sale,
   Tag,
   Task,
@@ -16,6 +18,8 @@ export interface Db {
   contact_notes: ContactNote[];
   deals: Deal[];
   deal_notes: DealNote[];
+  payments: Payment[];
+  payment_schedule: PaymentScheduleItem[];
   sales: Sale[];
   tags: Tag[];
   tasks: Task[];

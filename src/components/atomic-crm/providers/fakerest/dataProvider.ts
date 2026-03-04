@@ -14,6 +14,8 @@ import type {
   ContactNote,
   Deal,
   DealNote,
+  Payment,
+  PaymentScheduleItem,
   Sale,
   SalesFormData,
   SignUpData,
@@ -25,6 +27,7 @@ import { getCompanyAvatar } from "../commons/getCompanyAvatar";
 import { getContactAvatar } from "../commons/getContactAvatar";
 import { mergeContacts } from "../commons/mergeContacts";
 import type { CrmDataProvider } from "../types";
+import { generatePaymentSchedule } from "../../deals/generatePaymentSchedule";
 import { authProvider, USER_STORAGE_KEY } from "./authProvider";
 import generateData from "./dataGenerator";
 import { withSupabaseFilterAdapter } from "./internal/supabaseAdapter";
@@ -226,6 +229,127 @@ const dataProviderWithCustomMethod: CrmDataProvider = {
   },
   mergeContacts: async (sourceId: Identifier, targetId: Identifier) => {
     return mergeContacts(sourceId, targetId, baseDataProvider);
+  },
+  processReminders: async (settings?: {
+    daysBeforeDue?: number;
+    overdueGraceDays?: number;
+    defaultAfterDays?: number;
+  }) => {
+    const daysBeforeDue = settings?.daysBeforeDue ?? 3;
+    const overdueGraceDays = settings?.overdueGraceDays ?? 14;
+    const defaultAfterDays = settings?.defaultAfterDays ?? 30;
+
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+    let remindersCreated = 0;
+    let overdueMarked = 0;
+    let defaultedCount = 0;
+
+    // 1. Mark overdue schedule items
+    const { data: pendingItems } =
+      await dataProvider.getList<PaymentScheduleItem>("payment_schedule", {
+        filter: { status: "pending" },
+        pagination: { page: 1, perPage: 10000 },
+        sort: { field: "id", order: "ASC" },
+      });
+    for (const item of pendingItems) {
+      if (item.due_date < todayStr) {
+        await dataProvider.update("payment_schedule", {
+          id: item.id,
+          data: { status: "overdue" },
+          previousData: item,
+        });
+        overdueMarked++;
+      }
+    }
+
+    // 2. Create reminder tasks for upcoming payments
+    const reminderDate = new Date(today);
+    reminderDate.setDate(reminderDate.getDate() + daysBeforeDue);
+    const reminderDateStr = reminderDate.toISOString().split("T")[0];
+
+    const { data: upcomingItems } =
+      await dataProvider.getList<PaymentScheduleItem>("payment_schedule", {
+        filter: { status: "pending" },
+        pagination: { page: 1, perPage: 10000 },
+        sort: { field: "id", order: "ASC" },
+      });
+
+    for (const item of upcomingItems) {
+      if (item.due_date === reminderDateStr) {
+        const { data: deal } = await dataProvider.getOne<Deal>("deals", {
+          id: item.deal_id,
+        });
+        if (deal && !deal.archived_at && deal.contact_ids?.[0]) {
+          await dataProvider.create("tasks", {
+            data: {
+              contact_id: deal.contact_ids[0],
+              type: "payment-reminder",
+              text: `Payment reminder: ${deal.name} - $${(item.amount / 100).toFixed(2)} due ${item.due_date}`,
+              due_date: item.due_date,
+              sales_id: deal.sales_id,
+            },
+          });
+          remindersCreated++;
+        }
+      }
+    }
+
+    // 3. Auto-default severely overdue contracts
+    const { data: overdueItems } =
+      await dataProvider.getList<PaymentScheduleItem>("payment_schedule", {
+        filter: { status: "overdue" },
+        pagination: { page: 1, perPage: 10000 },
+        sort: { field: "id", order: "ASC" },
+      });
+
+    const defaultThreshold = new Date(today);
+    defaultThreshold.setDate(defaultThreshold.getDate() - defaultAfterDays);
+    const defaultThresholdStr = defaultThreshold.toISOString().split("T")[0];
+
+    const escalationThreshold = new Date(today);
+    escalationThreshold.setDate(
+      escalationThreshold.getDate() - overdueGraceDays,
+    );
+    const escalationStr = escalationThreshold.toISOString().split("T")[0];
+
+    // Collect deal IDs that need action
+    const dealsToDefault = new Set<number>();
+    const dealsToEscalate = new Set<number>();
+    for (const item of overdueItems) {
+      if (item.due_date < defaultThresholdStr) {
+        dealsToDefault.add(item.deal_id as number);
+      } else if (item.due_date < escalationStr) {
+        dealsToEscalate.add(item.deal_id as number);
+      }
+    }
+
+    for (const dealId of dealsToDefault) {
+      const { data: deal } = await dataProvider.getOne<Deal>("deals", {
+        id: dealId,
+      });
+      if (
+        deal &&
+        ["deposit-paid", "in-progress"].includes(deal.stage) &&
+        !deal.archived_at
+      ) {
+        await dataProvider.update("deals", {
+          id: dealId,
+          data: { stage: "defaulted", updated_at: new Date().toISOString() },
+          previousData: deal,
+        });
+        defaultedCount++;
+      }
+    }
+
+    return {
+      data: {
+        reminders_created: remindersCreated,
+        overdue_marked: overdueMarked,
+        contracts_defaulted: defaultedCount,
+        processed_at: new Date().toISOString(),
+      },
+    };
   },
   getConfiguration: async (): Promise<ConfigurationContextValue> => {
     const { data } = await baseDataProvider.getOne("configuration", { id: 1 });
@@ -532,17 +656,15 @@ export const dataProvider = withLifecycleCallbacks(
             ...params.data,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
+            source: "new",
           },
         };
       },
-      afterCreate: async (result) => {
-        await updateCompany(result.data.company_id, (company) => ({
-          nb_deals: (company.nb_deals ?? 0) + 1,
-        }));
-
-        return result;
-      },
       beforeUpdate: async (params) => {
+        // Prevent mutation of legacy records
+        if (params.previousData?.source === "legacy") {
+          throw new Error("Legacy records are read-only");
+        }
         return {
           ...params,
           data: {
@@ -551,10 +673,52 @@ export const dataProvider = withLifecycleCallbacks(
           },
         };
       },
+      beforeDelete: async (params) => {
+        const { data: deal } = await dataProvider.getOne<Deal>("deals", {
+          id: params.id,
+        });
+        if (deal?.source === "legacy") {
+          throw new Error("Legacy records cannot be deleted");
+        }
+        return params;
+      },
+      afterCreate: async (result, dataProvider) => {
+        if (result.data.company_id) {
+          await updateCompany(result.data.company_id, (company) => ({
+            nb_deals: (company.nb_deals ?? 0) + 1,
+          }));
+        }
+
+        // Auto-generate payment schedule
+        const deal = result.data;
+        if (deal.amount > 0 && deal.expected_closing_date) {
+          const entries = generatePaymentSchedule({
+            amount: deal.amount,
+            deposit_amount: deal.deposit_amount ?? 0,
+            payment_frequency: deal.payment_frequency ?? "weekly",
+            expected_closing_date: deal.expected_closing_date,
+          });
+          for (const entry of entries) {
+            await dataProvider.create("payment_schedule", {
+              data: {
+                deal_id: deal.id,
+                installment_number: entry.installment_number,
+                due_date: entry.due_date,
+                amount: entry.amount,
+                status: "pending",
+              },
+            });
+          }
+        }
+
+        return result;
+      },
       afterDelete: async (result) => {
-        await updateCompany(result.data.company_id, (company) => ({
-          nb_deals: (company.nb_deals ?? 1) - 1,
-        }));
+        if (result.data.company_id) {
+          await updateCompany(result.data.company_id, (company) => ({
+            nb_deals: (company.nb_deals ?? 1) - 1,
+          }));
+        }
 
         return result;
       },
@@ -567,8 +731,98 @@ export const dataProvider = withLifecycleCallbacks(
       resource: "deal_notes",
       beforeSave: async (params) => preserveAttachmentMimeType(params),
     } satisfies ResourceCallbacks<DealNote>,
+    {
+      resource: "payments",
+      beforeCreate: async (params) => {
+        // Auto-generate receipt number
+        const receiptNumber = `LD-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
+        return {
+          ...params,
+          data: {
+            ...params.data,
+            receipt_number: params.data.receipt_number || receiptNumber,
+            created_at: new Date().toISOString(),
+          },
+        };
+      },
+      afterCreate: async (result, dataProvider) => {
+        await updateDealTotalPaid(result.data.deal_id, dataProvider);
+        await linkPaymentToSchedule(result.data, dataProvider);
+        return result;
+      },
+      afterDelete: async (result, dataProvider) => {
+        await updateDealTotalPaid(result.data.deal_id, dataProvider);
+        return result;
+      },
+      afterUpdate: async (result, dataProvider) => {
+        await updateDealTotalPaid(result.data.deal_id, dataProvider);
+        return result;
+      },
+    } satisfies ResourceCallbacks<Payment>,
   ],
 ) as CrmDataProvider;
+
+async function updateDealTotalPaid(
+  dealId: Identifier,
+  dp: DataProvider,
+) {
+  const { data: payments } = await dp.getList<Payment>("payments", {
+    filter: { deal_id: dealId },
+    pagination: { page: 1, perPage: 10000 },
+    sort: { field: "id", order: "ASC" },
+  });
+  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+  const { data: deal } = await dp.getOne<Deal>("deals", { id: dealId });
+
+  const newStage =
+    totalPaid >= deal.amount &&
+    ["new", "deposit-paid", "in-progress"].includes(deal.stage)
+      ? "paid-in-full"
+      : totalPaid > 0 &&
+          totalPaid < deal.amount &&
+          ["new", "deposit-paid"].includes(deal.stage)
+        ? "in-progress"
+        : deal.stage;
+
+  await dp.update("deals", {
+    id: dealId,
+    data: { total_paid: totalPaid, stage: newStage },
+    previousData: deal,
+  });
+}
+
+async function linkPaymentToSchedule(
+  payment: Payment,
+  dp: DataProvider,
+) {
+  // Find the next pending/overdue schedule item for this deal
+  const { data: scheduleItems } = await dp.getList<PaymentScheduleItem>(
+    "payment_schedule",
+    {
+      filter: { deal_id: payment.deal_id },
+      pagination: { page: 1, perPage: 1000 },
+      sort: { field: "installment_number", order: "ASC" },
+    },
+  );
+
+  const nextPending = scheduleItems.find(
+    (item) => item.status === "pending" || item.status === "overdue",
+  );
+
+  if (nextPending) {
+    const newStatus =
+      payment.amount >= nextPending.amount ? "paid" : "partial";
+    await dp.update("payment_schedule", {
+      id: nextPending.id,
+      data: {
+        status: newStatus,
+        paid_date: payment.payment_date,
+        payment_id: payment.id,
+      },
+      previousData: nextPending,
+    });
+  }
+}
 
 /**
  * Convert a `File` object returned by the upload input into a base 64 string.

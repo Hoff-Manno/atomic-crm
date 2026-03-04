@@ -47,7 +47,7 @@ export function ActivityLogDealNoteCreated({
             >
               <SaleName />
             </ReferenceField>{" "}
-            added a note about deal{" "}
+            added a note about layby contract{" "}
             <ReferenceField
               source="deal_id"
               reference="deals"

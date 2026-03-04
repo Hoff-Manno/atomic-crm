@@ -13,6 +13,12 @@ import { contactOptionText } from "../misc/ContactOption";
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { AutocompleteCompanyInput } from "../companies/AutocompleteCompanyInput.tsx";
 
+const paymentFrequencyChoices = [
+  { id: "weekly", name: "Weekly" },
+  { id: "fortnightly", name: "Fortnightly" },
+  { id: "monthly", name: "Monthly" },
+];
+
 export const DealInputs = () => {
   const isMobile = useIsMobile();
   return (
@@ -20,9 +26,15 @@ export const DealInputs = () => {
       <DealInfoInputs />
 
       <div className={`flex gap-6 ${isMobile ? "flex-col" : "flex-row"}`}>
-        <DealLinkedToInputs />
+        <div className="flex flex-col gap-8 flex-1">
+          <DealLinkedToInputs />
+          <DealItemInputs />
+        </div>
         <Separator orientation={isMobile ? "horizontal" : "vertical"} />
-        <DealMiscInputs />
+        <div className="flex flex-col gap-8 flex-1">
+          <DealPaymentInputs />
+          <DealMiscInputs />
+        </div>
       </div>
     </div>
   );
@@ -33,7 +45,7 @@ const DealInfoInputs = () => {
     <div className="flex flex-col gap-4 flex-1">
       <TextInput
         source="name"
-        label="Deal name"
+        label="Contract name"
         validate={required()}
         helperText={false}
       />
@@ -52,7 +64,7 @@ const DealLinkedToInputs = () => {
 
       <ReferenceArrayInput source="contact_ids" reference="contacts_summary">
         <AutocompleteArrayInput
-          label="Contacts"
+          label="Customers"
           optionText={contactOptionText}
           helperText={false}
         />
@@ -61,11 +73,68 @@ const DealLinkedToInputs = () => {
   );
 };
 
+const DealItemInputs = () => {
+  return (
+    <div className="flex flex-col gap-4 flex-1">
+      <h3 className="text-base font-medium">Item details</h3>
+      <TextInput
+        source="item_description"
+        label="Item description"
+        helperText={false}
+      />
+      <TextInput
+        source="item_held_location"
+        label="Item held at"
+        helperText={false}
+      />
+    </div>
+  );
+};
+
+const DealPaymentInputs = () => {
+  return (
+    <div className="flex flex-col gap-4 flex-1">
+      <h3 className="text-base font-medium">Payment</h3>
+      <NumberInput
+        source="amount"
+        label="Total price"
+        defaultValue={0}
+        helperText={false}
+        validate={required()}
+      />
+      <NumberInput
+        source="deposit_amount"
+        label="Deposit amount"
+        defaultValue={0}
+        helperText={false}
+      />
+      <SelectInput
+        source="payment_frequency"
+        label="Payment frequency"
+        choices={paymentFrequencyChoices}
+        helperText={false}
+        defaultValue="weekly"
+      />
+      <NumberInput
+        source="total_paid"
+        label="Total paid so far"
+        defaultValue={0}
+        helperText={false}
+      />
+      <DateInput
+        source="next_payment_date"
+        label="Next payment date"
+        helperText={false}
+      />
+    </div>
+  );
+};
+
 const DealMiscInputs = () => {
   const { dealStages, dealCategories } = useConfigurationContext();
   return (
     <div className="flex flex-col gap-4 flex-1">
-      <h3 className="text-base font-medium">Misc</h3>
+      <h3 className="text-base font-medium">Contract</h3>
 
       <SelectInput
         source="category"
@@ -75,24 +144,24 @@ const DealMiscInputs = () => {
         optionValue="value"
         helperText={false}
       />
-      <NumberInput
-        source="amount"
-        defaultValue={0}
-        helperText={false}
-        validate={required()}
-      />
       <DateInput
         validate={required()}
         source="expected_closing_date"
+        label="Final payment date"
         helperText={false}
         defaultValue={new Date().toISOString().split("T")[0]}
+      />
+      <DateInput
+        source="contract_end_date"
+        label="Collection deadline"
+        helperText={false}
       />
       <SelectInput
         source="stage"
         choices={dealStages}
         optionText="label"
         optionValue="value"
-        defaultValue="opportunity"
+        defaultValue="new"
         helperText={false}
         validate={required()}
       />

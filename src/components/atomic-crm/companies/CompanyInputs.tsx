@@ -62,7 +62,7 @@ const CompanyDisplayInputs = () => {
         className="w-full h-fit"
         validate={required()}
         helperText={false}
-        placeholder="Company name"
+        placeholder="Supplier name"
       />
     </div>
   );

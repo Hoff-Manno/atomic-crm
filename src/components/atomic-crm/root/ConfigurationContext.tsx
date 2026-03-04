@@ -6,6 +6,12 @@ import { defaultConfiguration } from "./defaultConfiguration";
 
 export const CONFIGURATION_STORE_KEY = "app.configuration";
 
+export interface ReminderSettings {
+  daysBeforeDue: number;
+  overdueGraceDays: number;
+  defaultAfterDays: number;
+}
+
 export interface ConfigurationContextValue {
   companySectors: LabeledValue[];
   dealCategories: LabeledValue[];
@@ -18,6 +24,7 @@ export interface ConfigurationContextValue {
   lightModeLogo: string;
   googleWorkplaceDomain?: string;
   disableEmailPasswordAuthentication?: boolean;
+  reminderSettings?: ReminderSettings;
 }
 
 export const useConfigurationContext = () => {

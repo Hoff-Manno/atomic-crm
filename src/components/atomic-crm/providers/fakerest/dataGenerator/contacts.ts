@@ -22,7 +22,14 @@ const maxContacts = {
 };
 
 const getRandomContactDetailsType = () =>
-  random.arrayElement(["Work", "Home", "Other"]) as "Work" | "Home" | "Other";
+  random.arrayElement(["Mobile", "Home", "Work", "Other"]) as
+    | "Mobile"
+    | "Home"
+    | "Work"
+    | "Other";
+
+const getRandomPreferredContactMethod = () =>
+  random.arrayElement(["phone", "email", "text"]);
 
 export const generateContacts = (db: Db, size = 500): Required<Contact>[] => {
   const nbAvailblePictures = 223;
@@ -73,6 +80,15 @@ export const generateContacts = (db: Db, size = 500): Required<Contact>[] => {
     const first_seen = randomDate(new Date(company.created_at)).toISOString();
     const last_seen = first_seen;
 
+    // Generate a random date of birth (ages 18-80)
+    const birthYear =
+      new Date().getFullYear() - 18 - Math.floor(Math.random() * 62);
+    const birthMonth = Math.floor(Math.random() * 12);
+    const birthDay = 1 + Math.floor(Math.random() * 28);
+    const date_of_birth = weightedBoolean(60)
+      ? new Date(birthYear, birthMonth, birthDay).toISOString().split("T")[0]
+      : null;
+
     return {
       id,
       first_name,
@@ -89,6 +105,8 @@ export const generateContacts = (db: Db, size = 500): Required<Contact>[] => {
       first_seen: first_seen,
       last_seen: last_seen,
       has_newsletter: weightedBoolean(30),
+      preferred_contact_method: getRandomPreferredContactMethod(),
+      date_of_birth,
       status: random.arrayElement(defaultNoteStatuses).value,
       tags: random
         .arrayElements(db.tags, random.arrayElement([0, 0, 0, 1, 1, 2]))

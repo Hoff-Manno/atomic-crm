@@ -3,7 +3,7 @@ import { ArrayField } from "@/components/admin/array-field";
 import { SingleFieldList } from "@/components/admin/single-field-list";
 import { TextField } from "@/components/admin/text-field";
 import { EmailField } from "@/components/admin/email-field";
-import { Mail, Phone, Linkedin } from "lucide-react";
+import { Mail, Phone, MessageSquare, Cake } from "lucide-react";
 import type { ReactNode } from "react";
 import { contactGender } from "./contactGender";
 import type { Contact } from "../types";
@@ -26,26 +26,10 @@ export const ContactPersonalInfo = () => {
 
       {record.has_newsletter && (
         <p className="pl-6 py-1 text-sm text-muted-foreground">
-          Subscribed to newsletter
+          Marketing opt-in
         </p>
       )}
 
-      {record.linkedin_url && (
-        <PersonalInfoRow
-          icon={<Linkedin className="w-4 h-4 text-muted-foreground" />}
-          primary={
-            <a
-              className="underline hover:no-underline text-sm text-muted-foreground"
-              href={record.linkedin_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={record.linkedin_url}
-            >
-              LinkedIn
-            </a>
-          }
-        />
-      )}
       <ArrayField source="phone_jsonb">
         <SingleFieldList className="flex-col gap-y-0">
           <PersonalInfoRow
@@ -71,6 +55,36 @@ export const ContactPersonalInfo = () => {
           return null;
         })
         .filter(Boolean)}
+      {record.preferred_contact_method && (
+        <PersonalInfoRow
+          icon={
+            <MessageSquare className="w-4 h-4 text-muted-foreground" />
+          }
+          primary={
+            <div>
+              Prefers{" "}
+              {record.preferred_contact_method === "text"
+                ? "Text / SMS"
+                : record.preferred_contact_method.charAt(0).toUpperCase() +
+                  record.preferred_contact_method.slice(1)}
+            </div>
+          }
+        />
+      )}
+      {record.date_of_birth && (
+        <PersonalInfoRow
+          icon={<Cake className="w-4 h-4 text-muted-foreground" />}
+          primary={
+            <div>
+              {new Date(record.date_of_birth).toLocaleDateString("en-NZ", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </div>
+          }
+        />
+      )}
     </div>
   );
 };

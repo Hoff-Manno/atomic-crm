@@ -115,7 +115,7 @@ export function ContactImportDialog({
                   <strong>
                     {importer.importCount} / {importer.rowCount}
                   </strong>{" "}
-                  contacts, with <strong>{importer.errorCount}</strong> errors.
+                  customers, with <strong>{importer.errorCount}</strong> errors.
                   {importer.remainingTime !== null && (
                     <>
                       {" "}
@@ -148,8 +148,8 @@ export function ContactImportDialog({
             {importer.state === "complete" && (
               <Alert>
                 <AlertDescription>
-                  Contacts import complete. Imported {importer.importCount}{" "}
-                  contacts, with {importer.errorCount} errors
+                  Customer import complete. Imported {importer.importCount}{" "}
+                  customers, with {importer.errorCount} errors
                 </AlertDescription>
               </Alert>
             )}

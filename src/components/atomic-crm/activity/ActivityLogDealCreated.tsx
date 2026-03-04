@@ -26,7 +26,7 @@ export function ActivityLogDealCreated({
           <ReferenceField source="sales_id" reference="sales" record={activity}>
             <SaleName />
           </ReferenceField>{" "}
-          added deal{" "}
+          added layby contract{" "}
           {isMobile ? (
             deal.name
           ) : (

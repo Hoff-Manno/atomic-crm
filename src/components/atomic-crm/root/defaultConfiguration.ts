@@ -57,6 +57,12 @@ export const defaultTaskTypes = [
   { value: "call", label: "Call" },
 ];
 
+export const defaultReminderSettings = {
+  daysBeforeDue: 3,
+  overdueGraceDays: 14,
+  defaultAfterDays: 30,
+};
+
 export const defaultConfiguration: ConfigurationContextValue = {
   companySectors: defaultCompanySectors,
   dealCategories: defaultDealCategories,
@@ -67,4 +73,5 @@ export const defaultConfiguration: ConfigurationContextValue = {
   title: defaultTitle,
   darkModeLogo: defaultDarkModeLogo,
   lightModeLogo: defaultLightModeLogo,
+  reminderSettings: defaultReminderSettings,
 };

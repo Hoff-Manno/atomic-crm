@@ -73,12 +73,12 @@ export type Company = {
 
 export type EmailAndType = {
   email: string;
-  type: "Work" | "Home" | "Other";
+  type: "Work" | "Home" | "Other" | "Mobile";
 };
 
 export type PhoneNumberAndType = {
   number: string;
-  type: "Work" | "Home" | "Other";
+  type: "Work" | "Home" | "Other" | "Mobile";
 };
 
 export type Contact = {
@@ -92,6 +92,8 @@ export type Contact = {
   first_seen: string;
   last_seen: string;
   has_newsletter: boolean;
+  preferred_contact_method?: string | null;
+  date_of_birth?: string | null;
   tags: Identifier[];
   gender: string;
   sales_id?: Identifier | null;
@@ -113,7 +115,7 @@ export type ContactNote = {
 
 export type Deal = {
   name: string;
-  company_id: Identifier;
+  company_id: Identifier | null;
   contact_ids: Identifier[];
   category: string;
   stage: string;
@@ -123,8 +125,17 @@ export type Deal = {
   updated_at: string;
   archived_at?: string;
   expected_closing_date: string;
-  sales_id: Identifier;
+  sales_id: Identifier | null;
   index: number;
+  item_description?: string | null;
+  deposit_amount?: number;
+  payment_frequency?: string;
+  next_payment_date?: string | null;
+  total_paid?: number;
+  contract_end_date?: string | null;
+  item_held_location?: string | null;
+  source?: "new" | "legacy";
+  legacy_id?: string | null;
 } & Pick<RaRecord, "id">;
 
 export type DealNote = {
@@ -136,6 +147,29 @@ export type DealNote = {
 
   // This is defined for compatibility with `ContactNote`
   status?: undefined;
+} & Pick<RaRecord, "id">;
+
+export type Payment = {
+  deal_id: Identifier;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  receipt_number?: string;
+  notes?: string;
+  sales_id?: Identifier;
+  created_at: string;
+  source?: "new" | "legacy";
+} & Pick<RaRecord, "id">;
+
+export type PaymentScheduleItem = {
+  deal_id: Identifier;
+  installment_number: number;
+  due_date: string;
+  amount: number;
+  status: "pending" | "paid" | "overdue" | "partial";
+  paid_date?: string | null;
+  payment_id?: Identifier | null;
+  source?: "new" | "legacy";
 } & Pick<RaRecord, "id">;
 
 export type Tag = {

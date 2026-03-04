@@ -191,8 +191,8 @@ const ProfileForm = ({
               <p className="text-sm text-muted-foreground">
                 You can start sending emails to your server's inbound email
                 address, e.g. by adding it to the
-                <b> Cc: </b> field. Atomic CRM will process the emails and add
-                notes to the corresponding contacts.
+                <b> Cc: </b> field. Layaway Depot NZ will process the emails and
+                add notes to the corresponding customers.
               </p>
               <CopyPaste />
             </div>
