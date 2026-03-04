@@ -102,6 +102,8 @@ export type Contact = {
   phone_jsonb: PhoneNumberAndType[];
   nb_tasks?: number;
   company_name?: string;
+  source?: "new" | "legacy";
+  legacy_customer_name?: string | null;
 } & Pick<RaRecord, "id">;
 
 export type ContactNote = {

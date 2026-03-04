@@ -18,19 +18,25 @@ export const DealColumn = ({
   );
 
   const { dealStages } = useConfigurationContext();
+  const isEmpty = deals.length === 0;
   return (
-    <div className="flex-1 pb-8">
+    <div className={isEmpty ? "w-20 shrink-0 pb-8" : "flex-1 min-w-56 pb-8"}>
       <div className="flex flex-col items-center">
-        <h3 className="text-base font-medium">
+        <h3
+          className={`font-medium text-center ${isEmpty ? "text-xs text-muted-foreground" : "text-base"}`}
+        >
           {findDealLabel(dealStages, stage)}
         </h3>
-        <p className="text-sm text-muted-foreground">
-          {totalRemaining.toLocaleString("en-NZ", {
-            style: "currency",
-            currency: "NZD",
-            minimumFractionDigits: 0,
-          })} remaining
-        </p>
+        {!isEmpty && (
+          <p className="text-sm text-muted-foreground">
+            {totalRemaining.toLocaleString("en-NZ", {
+              style: "currency",
+              currency: "NZD",
+              minimumFractionDigits: 0,
+            })}{" "}
+            remaining
+          </p>
+        )}
       </div>
       <Droppable droppableId={stage}>
         {(droppableProvided, snapshot) => (
